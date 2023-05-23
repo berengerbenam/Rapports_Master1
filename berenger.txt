@@ -1,0 +1,46 @@
+root@nasry-ahamadi:~# mkdir SSL
+root@nasry-ahamadi:~# cd SSL/
+root@nasry-ahamadi:~/SSL# mkdir private
+root@nasry-ahamadi:~/SSL# mkdir cacerts
+root@nasry-ahamadi:~/SSL# mkdir demoCA
+root@nasry-ahamadi:~/SSL# mkdir newcerts
+root@nasry-ahamadi:~/SSL# touch demoCA/index.txt
+root@nasry-ahamadi:~/SSL# echo "01" > demoCA/serial
+root@nasry-ahamadi:~/SSL#
+
+
+openssl req -x509 -days 3650 -newkey rsa:2048 -keyout private/caKey.pem -out cacerts/caCert.pem -subj "/C=SN/ST=Senegal/L=Dakar/O=Test/CN=ca"
+
+
+root@nasry-ahamadi:~/SSL# openssl x509 -in cacerts/caCert.pem –text
+
+
+root@nasry-ahamadi:~/SSL# openssl req -nodes -newkey rsa:2048 -keyout private/serverkey.key -out private/serverReq.csr -subj "/C=SN/ST=Senegal/L=Dakar/O=Test/CN=server.test.sn"
+
+
+root@nasry-ahamadi:~/SSL# openssl ca -in private/serverReq.csr -days 365 -cert cacerts/caCert.pem -keyfile private/caKey.pem -outdir newcerts/ -out newcerts/serverCert.crt
+
+#####################################################################to day##############################################################################
+openssl req -newkey rsa:2048 -subj "/C=SN/ST=Senegal/O=Test/CN=berenger" -keyout private/berengerKey.key -out private/berengerReq.csr
+
+
+openssl ca -in private/berengerReq.csr -days 365 -out newcerts/berengerCert.crt -notext -cert cacerts/caCert.pem -keyfile private/caKey.pem -outdir newcerts/
+
+
+openssl pkcs12 -export -inkey private/berengerKey.key -in newcerts/berengerCert.crt -certfile cacerts/caCert.pem -out pkcs12/berenger.p12
+
+
+
+<VirtualHost _default_:443>
+        ServerName server.test.sn
+        ServerAlias 192.168.2.7
+        DocumentRoot /var/www/html/ssl
+        SSLEngine on
+        SSLCertificateFile   /etc/apache2/serverCert.crt
+        SSLCertificateKeyFile  /etc/apache2/serverkey.key
+        SSLVerifyClient require
+        SSLVerifyDepth 10
+        SSLCACertificateFile /etc/apache2/caCert.pem
+</VirtualHost>
+
+
